@@ -56,7 +56,62 @@ class Solution:
     @param: n: a positive integer
     @return: n x 3 matrix
     """
+    def consistentHashing_FAILED_at_n270(self, n):
+import heapq
+class Solution:
+    """
+    @param: n: a positive integer
+    @return: n x 3 matrix
+    """
     def consistentHashing(self, n):
+        # write your code here
+        if not n:
+            return
+        
+        shards = []
+        
+        # load data when there is only 1 machine
+        shard = [0, 359, 1]
+        shards.append( (shard[0]-shard[1], shard[2], shard) )
+        
+        
+        for i in range(2, n+1):
+            *_, old = heapq.heappop(shards)
+            old_start, old_end, old_id = old 
+            new = [(old_start + old_end) // 2 + 1, old_end, i]
+            old = [old_start, (old_start + old_end) // 2, old_id ]
+            heapq.heappush(shards, (old[0]-old[1], old[2], old))
+            heapq.heappush(shards, (new[0]-new[1], new[2], new))
+        
+        result = []
+        for s in shards:
+            result += [ s[2] ]
+        
+        return result
+        # https://www.jiuzhang.com/solution/consistent-hashing/#tag-other-lang-python    #   
+        # 对于每次新加的机器，需要寻找所有已知的机器中范围最大的那一个，进行切分。因此可以用Heap来加速寻找最大的过程。每次从Heap中返回最大的机器，切分完成后与新家的机器一起重新加入Heap，供下一次选取。
+        # Time Complexity: O(nlogn
+        # Space Complexity: O(n)
+        
+    def consistentHashing_BF(self, n):
+        # Write your code here
+        results = [[0, 359, 1]]
+        for i in xrange(1, n):
+            index = 0
+            for j in xrange(i):
+                if results[j][1] - results[j][0] + 1 > \
+                   results[index][1] - results[index][0] + 1:
+                    index = j
+            
+            x, y = results[index][0], results[index][1]
+            results[index][1] = (x + y) / 2
+            results.append([(x + y) / 2 + 1, y, i + 1])
+
+        return results
+    # 每次暴力找最大的编号最小的区间，然后分割即可
+    # https://www.jiuzhang.com/solution/consistent-hashing/#tag-highlight-lang-python
+    
+    def consistentHashing_FAILED_at_n270(self, n):
         # write your code here
         Q = deque()
         v = [0, 359, 1]

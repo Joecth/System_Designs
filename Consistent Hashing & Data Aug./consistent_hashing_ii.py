@@ -1,3 +1,4 @@
+# 520. 一致性哈希 II
 # 在 Consistent Hashing I 中我们介绍了一个比较简单的一致性哈希算法，这个简单的版本有两个缺陷：
 
 # 增加一台机器之后，数据全部从其中一台机器过来，这一台机器的读负载过大，对正常的服务会造成影响。
@@ -55,43 +56,59 @@
 #   2
 #   1
 # Notice
+# 当 n 为 2^64 时，在这个区间内随机基本不会出现重复。
+# 但是为了方便测试您程序的正确性，n 在数据中可能会比较小，所以你必须保证你生成的 k 个随机数不会出现重复。
+# LintCode并不会判断你addMachine的返回结果的正确性（因为是随机数），只会根据您返回的addMachine的结果判断你getMachineIdByHashCode结果的正确性。
 
-from collections import deque
-from math import ceil, log
 class Solution:
-    """
-    @param: n: a positive integer
-    @return: n x 3 matrix
-    """
-    def consistentHashing(self, n):
+
+    # @param {int} n a positive integer
+    # @param {int} k a positive integer
+    # @return {Solution} a Solution object
+    @classmethod
+    def create(cls, n, k):
+        # Write your code here
+        solution = cls()
+        solution.ids = {}
+        solution.machines = {}
+        solution.n = n
+        solution.k = k
+        return solution
+
+    # @param {int} machine_id an integer
+    # @return {int[]} a list of shard ids
+    def addMachine(self, machine_id):
         # write your code here
-        Q = deque()
-        v = [0, 359, 1]
-        Q.append(v)
-        res = Q
-        for idx in range(1, n):
-            cur = idx + 1
-            low, high, idx = Q.popleft()
+        ids = []
+        import random
+        for i in range(self.k):
+            index = random.randint(0, self.n - 1)
+            while index in self.ids:
+                index = random.randint(0, self.n - 1)
 
-            Q.append([low , (low+high)//2, idx])
-            new_v = [(low+high)//2+1 , high,cur]
-            Q.append(new_v)
-            res = Q
-            
-            ## Following makes system use smaller ID for same size segs, but still failed at 76, Anyway, sequence matters less
-            if not self.is_power_of_two(cur):
-                len_to_sort = 2**ceil(log(cur,2)) - cur
-                tmp = sorted(list(Q)[:len_to_sort], key=lambda x: x[2])
-                # print('tmp: ', tmp)
-                tmp.extend(list(Q)[len_to_sort:])
-                Q = deque(tmp)
-                # print('Q: ', Q)
+            ids.append(index)
+            self.ids[index] = True
 
-        return list(res)
-    
-    def is_power_of_two(self, n):
-        return not (n & (n-1))
+        ids.sort()
+        self.machines[machine_id] = ids
+        return ids
 
-if __name__ == '__main__':
-    sol = Solution()
-    sol.consistentHashing(3)
+    # @param {int} hashcode an integer
+    # @return {int} a machine id
+    def getMachineIdByHashCode(self, hashcode):
+        # write your code here
+        machine_id = -1
+        distance = self.n + 1
+
+        for key, value in self.machines.items():
+            import bisect
+            index = bisect.bisect_left(value, hashcode) % len(value)
+            d = value[index] - hashcode
+            if d < 0:
+                d += self.n
+
+            if d < distance:
+                distance = d
+                machine_id = key
+
+        return machine_id
